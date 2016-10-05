@@ -3,9 +3,14 @@ extends layout
 block content
   .container
     .row
-      .col-xs-12.col-md-6.col-md-offset-3
+      .col-xs-12
         h1.page-header= title
-        p Un menu de acciones...
-        ul.list-unstyled
-          li
-            a.btn.btn-default(href="/alarmlist") Lista de Alarmas
+        .row
+          .col-xs-12.col-md-3
+            a.btn.btn-default.btn-ancho.btn-lg(href="/alarmlist") Lista de Alarmas
+          .col-xs-12.col-md-3
+            a.btn.btn-default.btn-ancho.btn-lg(href="/cdlist/CD") Lista de CD
+          .col-xs-12.col-md-3
+            a.btn.btn-default.btn-ancho.btn-lg(href="/etlist/ET") Lista de ET
+          .col-xs-12.col-md-3
+            a.btn.btn-primary.btn-ancho.btn-lg(href="/saveitems") Guardar datos en la base

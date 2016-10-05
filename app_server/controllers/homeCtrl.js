@@ -1,8 +1,14 @@
 var fs = require('fs');
-var Transform = require('stream').Transform;
-var csv = require('csv-streamify');
-var JSONStream = require('JSONStream');
-var _ = require('lodash');
+var path = require('path');
+//var Transform = require('stream').Transform;
+//var csv = require('csv-streamify');
+//var JSONStream = require('JSONStream');
+//var _ = require('lodash');
+var async = require('async');
+var parser = require('./parser');
+var mongoose = require('mongoose');
+var Alarm = mongoose.model('Alarm');
+var ET = mongoose.model('ET');
 
 exports.definirTitulo = function (titulo, req, res, next) {
   res.locals.title = titulo;
@@ -13,46 +19,96 @@ exports.imprimirPagina = function (vista, req, res, next) {
   res.render(vista);
 };
 
-exports.getAlarms = function (req, res, next) {
-  res.send('enviar lista de alarmas');
-};
+var actualPage = 0;
+var perPage = 100;
 
-exports.streamAlarms = function (req, res, next) {
-  var COLUMNS = ['timestamp','MSEC','sequence_number','alarm_id','alarm_class','resource','logged_by','reference','prev_state','log_action','final_state','alarm_message','generation_time']
-  var parser = new Transform({objectMode: true});
-  parser.header = null;
-  parser._rawHeader = [];
-  parser._transform = function (data, encoding, done) {
-    if (!this.header) {
-      this._rawHeader.push(data);
-      if (data[0] === 'timestamp') {
-        this.header = this._rawHeader;
-        //this.push({header: this.header});
+exports.getAlarms = function (req, res, next) {
+  res.locals.path = req.path;
+  if (!req.query.page) {
+      actualPage = 0;
+  } else {
+      if (req.query.page == 'prev') {
+      actualPage -= 1;
+      if (actualPage < 0) {
+        actualPage = 0;
       }
     } else {
-      this.push(_.zipObject(COLUMNS, data));
+      actualPage += 1;
     }
-    done();
   }
+  res.locals.actualPage = actualPage;
+  var page = Math.max(0, actualPage);
+  var COLUMNS = ['timestamp', 'alarm_id', 'alarm_class', 'resource', 'alarm_message', 'generation_time'];
+  //['generation_time', 'alarm_message', 'final_state', 'log_action', 'prev_state', 'timestamp'];
+  res.locals.columns = COLUMNS;
+  var _select = COLUMNS.toString().replace(/,/g, ' ');
+  Alarm
+    .find({'tipo': 'AL'})
+    .select(_select)
+    .limit(perPage)
+    .skip(perPage * page)
+    .sort({
+      'generation_time': 'asc'
+    })
+    .exec(function (err, alarms) {
+      if (err) return;
+      res.locals.items = alarms;
+      res.render('alarmList');
+    })
+};
 
-  var csvToJson = csv({objectMode: true});
-  var jsonToStrings = JSONStream.stringify(false);
+exports.getCD = function (req, res, next) {
+  res.locals.path = req.path;
+  var tipo = req.params.type;
+  if (!req.query.page) {
+      actualPage = 0;
+  } else {
+      if (req.query.page == 'prev') {
+      actualPage -= 1;
+      if (actualPage < 0) {
+        actualPage = 0;
+      }
+    } else {
+      actualPage += 1;
+    }
+  }
+  res.locals.actualPage = actualPage;
+  var page = Math.max(0, actualPage);
+  var COLUMNS = ['timestamp', 'point_id', '_VAL'];
+  //['timestamp', 'MSEC', 'point_id', '_ENG', '_VAL', 'tipo'];
+  res.locals.columns = COLUMNS;
+  var _select = COLUMNS.toString().replace(/,/g, ' ');
+  ET
+    .find({'tipo': tipo})
+    .select(_select)
+    .limit(perPage)
+    .skip(perPage * page)
+    .sort({'timestamp': 'asc'})
+    .exec(function (err, cds) {
+      if (err) return;
+      res.locals.items = cds;
+      res.render('alarmList');
+    })
+};
 
-
-  var filename = __dirname + '/../../app_client/public/files' + '/alarms.CSV';
-  var readStream = fs.createReadStream(filename);
-
-
-  readStream.on('open', function () {
-    readStream
-      .pipe(csvToJson)
-      .pipe(parser)
-      .pipe(jsonToStrings)
-      .on('data', function (doc) {
-        console.log(doc);
+exports.saveitems = function (req, res, next) {
+  var dirToWatch = path.join(__dirname, '..', '..', 'app_client', 'public', 'files');
+  var counter = 0;
+  fs.readdir(dirToWatch, function (err, files) {
+    async.forEachSeries(files, function (file, task_cb) {
+      var _file = dirToWatch + '/' + file;
+      parser.stream(_file, function (err, table) {
+        if (err) return task_cb(err);
+        counter += 1;
+        console.log(table.toString());
+        task_cb();
       })
-      .on('end', function (doc) {
-        res.send('datos logueados');
-      })
+    }, function (err) {
+      if (err) next();
+      res.render('summary', {
+        title: 'Resumen',
+        cant_items: counter
+      });
+    })
   })
 };

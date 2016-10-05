@@ -1,0 +1,27 @@
+extends layout
+
+block content
+  .container
+    h1.page-header= title
+    if !items
+      p No hay items en la base de datos.
+    else
+      table.table
+        thead
+          tr
+            each column in columns
+              th= column.replace(/_/, ' ')
+        tbody
+          each item in items
+            tr
+              each column in columns
+                if column == 'generation_time' || column == 'timestamp'
+                  td= moment(item[column]).format('YYYY-MM-DD HH:mm')
+                else
+                  td= item[column]
+    nav(aria-label="...")
+      ul.pager
+        li(class= actualPage == 0 ? 'disabled' : '')
+          a(href= path +"?page=prev") Previous
+        li
+          a(href= path +"?page=sig") Next

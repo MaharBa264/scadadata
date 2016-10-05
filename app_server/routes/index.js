@@ -10,5 +10,9 @@ router.get('/', [
 ]);
 
 router.get('/alarmlist', homeCtrl.getAlarms);
+router.get('/cdlist/:type', homeCtrl.getCD);
+router.get('/etlist/:type', homeCtrl.getCD);
+
+router.get('/saveitems', homeCtrl.saveitems);
 
 module.exports = router;

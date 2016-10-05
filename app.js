@@ -4,18 +4,12 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var chokidar = require('chokidar');
-var readDir = require('./app_server/controllers/read_dir');
 require('./app_api/models/db');
-var parser = require('./app_server/controllers/parser');
 
 var routes = require('./app_server/routes/index');
 var users = require('./app_server/routes/users');
-var fs = require('fs');
-
 
 var app = express();
-
 
 // view engine setup
 app.set('views', path.join(__dirname, 'app_server', 'views'));
@@ -28,19 +22,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'app_client', 'public')));
-
-var dirToWatch = path.join(__dirname, 'app_client', 'public', 'files');
-var watcher = chokidar.watch(dirToWatch);
-
-watcher.on('add', function (path) {
-  parser.stream(path);
-  parser.parse(path, function (err, doc) {
-    if (err) {
-      throw err;
-    }
-    console.log(`doc: ${doc} has been parsed`);
-  })
-})
+app.locals.moment = require('moment');
 
 app.use('/', routes);
 app.use('/users', users);
