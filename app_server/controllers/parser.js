@@ -67,7 +67,7 @@ exports.stream = function (path, callback) {
             var table_enviar = table;
             table = new Table();
             callback(null, table_enviar);
-          })
+          });
         });
       } else {
         // avisar que el filename ya esta en la base.
