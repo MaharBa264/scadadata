@@ -15,10 +15,10 @@ block content
           each item in items
             tr
               each column in columns
-                if column == 'generation_time' || column == 'timestamp'
-                  td= moment(item[column]).format('YYYY-MM-DD HH:mm')
-                else
-                  td= item[column]
+                //if column == 'generation_time' || column == 'timestamp'
+                //  td= moment(item[column]).format('D-MMM-YYYY HH:mm:ss.SSS')
+                //else
+                td= item[column]
     nav(aria-label="...")
       ul.pager
         li(class= actualPage == 0 ? 'disabled' : '')

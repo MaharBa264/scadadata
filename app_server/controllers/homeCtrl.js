@@ -7,6 +7,7 @@ var path = require('path');
 var async = require('async');
 var parser = require('./parser');
 var mongoose = require('mongoose');
+var dateFormat = require('dateformat');
 var Alarm = mongoose.model('Alarm');
 var ET = mongoose.model('ET');
 
@@ -47,11 +48,14 @@ exports.getAlarms = function (req, res, next) {
     .select(_select)
     .limit(perPage)
     .skip(perPage * page)
-    .sort({
-      'generation_time': 'asc'
-    })
     .exec(function (err, alarms) {
       if (err) return;
+      var _alarms = [];
+      alarms.forEach(function (alarm, index) {
+        alarm.timestamp = dateFormat(new Date(alarm.timestamp), 'dd-mmm-yyyy h:MM:ss.TT');
+        alarm.generation_time = dateFormat(new Date(alarm.generation_time), 'dd-mmm-yyyy h:MM:ss.TT');
+        _alarms.push(alarm);
+      });
       res.locals.items = alarms;
       res.render('alarmList');
     })
